@@ -161,7 +161,7 @@ const getUrl = async (keyword, opts: any = {}, Utils) => {
   const operators = [
     'this', 'function', 'function*', 'class', 'yield', 'yeild*', 'async function', 'await',
     'new', 'new.target', 'super',
-    'delte', 'void', 'typeof',
+    'delete', 'void', 'typeof',
     'in', 'instanceof',
     ''
   ]
