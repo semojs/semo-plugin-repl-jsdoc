@@ -1,6 +1,6 @@
 {
   "name": "semo-plugin-starter-typescript",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "A Semo plugin to provide ability to get js doc in REPL",
   "keywords": [
     "semo",
