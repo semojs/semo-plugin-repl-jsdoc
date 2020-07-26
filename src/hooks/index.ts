@@ -77,7 +77,7 @@ const parseHtml = async (html) => {
   return converted
 }
 
-const getUrl = (keyword, opts, Utils) => {
+const getUrl = async (keyword, opts: any = {}, Utils) => {
   let lang = opts.lang || Utils.config('$plugin.repl-doc.lang') || Utils.yargs.locale() || 'en-US'
   lang = lang.replace('_', '-')
 
@@ -90,6 +90,53 @@ const getUrl = (keyword, opts, Utils) => {
   }
 
   lang = lang_map[lang] ? lang_map[lang] : lang
+
+
+
+  if (lang === 'zh-CN') {
+    const cnOperatorMappings = {
+      '比较操作符': 'comparison_operators',
+      '逗号操作符': 'comma_operator',
+      '赋值运算符': 'assignment_operators',
+      '条件运算符': 'conditional_operator',
+      '逻辑运算符': 'logical_operators',
+      '按位操作符': 'bitwise_operators',
+      '算术运算符': 'arithmetic_operators',
+      '展开语法': 'spread_syntax',
+      '属性访问器': 'property_accessors',
+      '对象初始化': 'object_initializer',
+      '圆括号运算符': 'grouping',
+      '解构赋值': 'destructuring_assignment',
+    }
+
+    const matched = Object.keys(cnOperatorMappings).filter((key) => {
+      return key.indexOf(keyword) > -1
+    })
+
+    if (matched.length > 0) {
+      opts.type = 'operator'
+    }
+
+    if (matched.length > 1) {
+      const answers: any = await Utils.inquirer.prompt([
+        {
+          type: 'list',
+          name: 'selected',
+          message: `Please choose a matched keyword:`,
+          choices: matched.map((key) => {
+            return {
+              key: cnOperatorMappings[key],
+              value: key
+            }
+          })
+        }
+      ])
+
+      keyword = cnOperatorMappings[answers.selected]
+    } else {
+      keyword = cnOperatorMappings[matched[0]]
+    }
+  }
 
   const topic = keyword.replace('.', '/').replace(' ', '_')
   const topic_prefix = topic.split('/')[0]
@@ -142,7 +189,6 @@ const getUrl = (keyword, opts, Utils) => {
     'intl', 
     'webassembly',
   ]
-
   
   let url
   if (opts.type) {
@@ -237,7 +283,7 @@ export = (Utils) => {
                 return 
               }
 
-              const url = getUrl(keyword, parseKeyworld, Utils)
+              const url = await getUrl(keyword, parseKeyworld, Utils)
               const html = await getHtml(url)
               if (html) {
                 let parsed = await parseHtml(html)
