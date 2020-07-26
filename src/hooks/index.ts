@@ -54,6 +54,7 @@ const parseHtml = async (html) => {
   $('#wikiArticle .standard-table').remove()
   $('#wikiArticle iframe').remove()
   $('#wikiArticle .hidden').remove()
+  $('#wikiArticle table').remove()
 
   const parsed = $('#wikiArticle').html()
   // const parsed = $('#wikiArticle p').first().html()
