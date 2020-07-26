@@ -56,7 +56,13 @@ const parseHtml = async (html) => {
   $('#wikiArticle .hidden').remove()
   $('#wikiArticle table').remove()
 
-  const parsed = $('#wikiArticle').html()
+  let parsed = $('#wikiArticle').html()
+
+  if (!parsed) {
+    parsed = $('.search-results .result a.result-title')
+    parsed = '<ul>' + `${parsed}`.replace(/(<a.*?>.*?<\/a>)/g, '<li>$1</li>\n') + '</ul>'
+  }
+
   // const parsed = $('#wikiArticle p').first().html()
   let decoded = he.decode(parsed)
 
@@ -72,9 +78,6 @@ const parseHtml = async (html) => {
 }
 
 const getUrl = (keyword, opts, Utils) => {
-
-  keyword = keyword.toLowerCase()
-
   let lang = opts.lang || Utils.config('$plugin.repl-doc.lang') || Utils.yargs.locale() || 'en-US'
   lang = lang.replace('_', '-')
 
@@ -89,6 +92,7 @@ const getUrl = (keyword, opts, Utils) => {
   lang = lang_map[lang] ? lang_map[lang] : lang
 
   const topic = keyword.replace('.', '/').replace(' ', '_')
+  const topic_prefix = topic.split('/')[0]
 
   const categories = [
     'global_objects', 'global objects',
@@ -108,7 +112,7 @@ const getUrl = (keyword, opts, Utils) => {
   ]
 
   const operators = [
-    'this', 'yield', 'yeild*', 'await',
+    'this', 'function', 'function*', 'class', 'yield', 'yeild*', 'async function', 'await',
     'new', 'new.target', 'super',
     'delte', 'void', 'typeof',
     'in', 'instanceof',
@@ -122,19 +126,61 @@ const getUrl = (keyword, opts, Utils) => {
     'arrow_functions', 'arrow functions'
   ]
 
-  let url
-  if (categories.includes(keyword)) {
-    url = `https://developer.mozilla.org/${lang}/docs/Web/JavaScript/Reference/${topic}`
-  } else if (functions.includes(keyword)) {
-    url = `https://developer.mozilla.org/${lang}/docs/Web/JavaScript/Reference/Functions/${topic}`
-  } else if (statements.includes(keyword)) {
-    url = `https://developer.mozilla.org/${lang}/docs/Web/JavaScript/Reference/Statements/${topic}`
-  } else if (operators.includes(keyword)) {
-    url = `https://developer.mozilla.org/${lang}/docs/Web/JavaScript/Reference/Operators/${topic}`
-  } else {
-    url = `https://developer.mozilla.org/${lang}/docs/Web/JavaScript/Reference/Global_Objects/${topic}`
-  }
 
+  const global_objects = [
+    'infinity', 'nan', 'undefined', 'globalthis',
+    'eval', 'isfinite', 'isnan', 'parsefloat', 'parseint', 'decodeuri', 'decodeuricomponent', 'encodeuri', 'encodeuricomponent',
+    'obbject', 'function', 'boolean', 'symbol',
+    'error', 'aggregateerror', 'evalerror', 'internalerror', 'rangeerror', 'referenceerror', 'syntaxerror', 'typeerror', 'urierror', 
+    'number', 'bigint', 'math', 'date', 
+    'string', 'regexp',
+    'array', 'int8array', 'uint8array', 'uint8clampedarray', 'int16array', 'uint16array', 'int32array', 'uint32array', 'float32array', 'float64array', 'bigint64array', 'biguint64array', 
+    'map', 'set', 'weakmap', 'weakset',
+    'arraybuffer', 'sharedarraybuffer', 'atomics', 'dataview', 'json', 
+    'promise', 'generator', 'generatorfunction', 'asyncfunction',
+    'reflect', 'proxy',
+    'intl', 
+    'webassembly',
+  ]
+
+  
+  let url
+  if (opts.type) {
+    switch (opts.type) {
+      case 'category':
+        url = `https://developer.mozilla.org/${lang}/docs/Web/JavaScript/Reference/${topic}`
+        break
+      case 'function':
+        url = `https://developer.mozilla.org/${lang}/docs/Web/JavaScript/Reference/Functions/${topic}`
+        break
+      case 'statement':
+        url = `https://developer.mozilla.org/${lang}/docs/Web/JavaScript/Reference/Statements/${topic}`
+        break
+      case 'operator':
+        url = `https://developer.mozilla.org/${lang}/docs/Web/JavaScript/Reference/Operators/${topic}`
+        break
+      case 'global_object':
+        url = `https://developer.mozilla.org/${lang}/docs/Web/JavaScript/Reference/Global_Objects/${topic}`
+        break
+      case 'search':
+        url = `https://developer.mozilla.org/${lang}/search?q=${keyword}`
+        break
+    }
+  } else {
+    if (categories.includes(keyword)) {
+      url = `https://developer.mozilla.org/${lang}/docs/Web/JavaScript/Reference/${topic}`
+    } else if (functions.includes(keyword)) {
+      url = `https://developer.mozilla.org/${lang}/docs/Web/JavaScript/Reference/Functions/${topic}`
+    } else if (statements.includes(keyword)) {
+      url = `https://developer.mozilla.org/${lang}/docs/Web/JavaScript/Reference/Statements/${topic}`
+    } else if (operators.includes(keyword)) {
+      url = `https://developer.mozilla.org/${lang}/docs/Web/JavaScript/Reference/Operators/${topic}`
+    } else if (global_objects.includes(topic_prefix)) {
+      url = `https://developer.mozilla.org/${lang}/docs/Web/JavaScript/Reference/Global_Objects/${topic}`
+    } else {
+      url = `https://developer.mozilla.org/${lang}/search?q=${keyword}`
+    }
+  }
 
   Utils.debug('semo-plugin-repl-doc')(url)
   return url
@@ -143,7 +189,6 @@ const getUrl = (keyword, opts, Utils) => {
 const getHtml = async (url) => {
   try {
     const response = await got.get(url)
-
     let html = response.body
 
     return html
@@ -172,12 +217,20 @@ export = (Utils) => {
 
               let parseKeyworld = Utils.yParser(keyword)
               keyword = parseKeyworld._.join(' ')
-
+              keyword = keyword.replace(/\(.*?\)/, '').toLowerCase().trim()
 
               if (parseKeyworld.help || parseKeyworld.h || keyword === 'help') {
                 Utils.info('.doc help: This help')
                 Utils.info('.doc string.trim: Get info about Javascript object and method')
-                Utils.info('.doc string.trim --lang=en_US: Set prefered lang')
+                Utils.info('.doc string.trim --lang=en_US: Set prefered language code')
+                Utils.info('.doc string.trim --type=global_object: Set keyword type')
+
+                console.log()
+                Utils.info('Supported type: statement, category, function, operator, global_object, search.')
+                Utils.info('Supported lang: standard language code, e.g. en_US, zh_CN...')
+                Utils.info('If --lang exist but no translation, it will fallover to en_US.')
+                Utils.info('If --type exist, it will get info from that type, if not, it will try to guess your purpose.')
+                console.log()
 
                 // @ts-ignore
                 this.displayPrompt();
