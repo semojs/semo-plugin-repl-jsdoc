@@ -319,21 +319,22 @@ export = (Utils) => {
 
 
               if (opts.help) {
+                const helpInfo = `## Examples
+    .doc string.trim
+    .doc string.trim --lang=en_US   
+    .doc string.trim --type=global_object
+    .doc string.trim --force      
 
-                Utils.info('Examples:')
-                Utils.info('.doc string.trim')
-                Utils.info('.doc string.trim --lang=en_US')
-                Utils.info('.doc string.trim --type=global_object')
-                Utils.info('.doc string.trim --force')
-                
-                console.log()
-                Utils.info('Supported type: statement, category, function, operator, global_object, search.')
-                Utils.info('Supported lang: standard language codes, e.g. en_US, zh_CN...')
-                Utils.info('If --lang exist but no translation, it will fallover to en_US.')
-                Utils.info('If --type exist, it will get info from that type, if not, it will try to guess your purpose.')
-                Utils.info('If --force exist, it will ignore cache in memory.')
-                Utils.info('For get this help, you can use --help, -h, or just input .doc help.')
-                console.log()
+## Tips
+
+* Supported type: statement, category, function, operator, global_object, search.
+* Supported lang: standard language codes, e.g. en_US, zh_CN...
+* If --lang exists but no translation, it will fallover to en_US.
+* If --type exists, it will get info from that type, if not, it will try to guess your purpose.
+* If --force exists, it will ignore cache in memory.
+* For getting this help, you can use --help, -h, or just input .doc help.
+`
+                console.log(marked(helpInfo))
 
                 // @ts-ignore
                 this.displayPrompt();
