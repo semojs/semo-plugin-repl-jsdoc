@@ -5,7 +5,52 @@ import TurndownService from 'turndown'
 import { tables } from 'turndown-plugin-gfm'
 import marked from 'marked'
 import TerminalRenderer from 'marked-terminal'
+marked.setOptions({
+  renderer: new TerminalRenderer()
+})
 
+/**
+ * Parse input to keyword and opts
+ * @param input 
+ * @param Utils 
+ */
+const getKeywordAndOpts = (input, Utils) => {
+  let parseKeyworld = Utils.yParser(input)
+  let keyword = parseKeyworld._.join(' ')
+  keyword = keyword.replace(/\(.*?\)/, '').toLowerCase().trim()
+
+  let lang = parseKeyworld.lang || Utils.config('$plugin.repl-doc.lang') || Utils.yargs.locale() || 'en-US'
+  lang = lang.replace('_', '-')
+
+  const lang_map = {
+    pt: 'pt-PT',
+    br: 'pt-BR',
+    en: 'en-US',
+    cn: 'zh-CN',
+    tw: 'zh-TW',
+  }
+
+  lang = lang_map[lang] ? lang_map[lang] : lang
+
+  let type = parseKeyworld.type || null
+  let force = parseKeyworld.force || false
+  let help = Boolean(parseKeyworld.help) || Boolean(parseKeyworld.h) || keyword === 'help' || false
+
+  return {
+    keyword,
+    opts: {
+      type,
+      lang,
+      help,
+      force
+    }
+  }
+}
+
+/**
+ * Parse html to markdown
+ * @param html 
+ */
 const parseHtml = async (html) => {
   const $ = cheerio.load(html)
 
@@ -77,21 +122,14 @@ const parseHtml = async (html) => {
   return converted
 }
 
+/**
+ * Get url to parse
+ * @param keyword 
+ * @param opts 
+ * @param Utils 
+ */
 const getUrl = async (keyword, opts: any = {}, Utils) => {
-  let lang = opts.lang || Utils.config('$plugin.repl-doc.lang') || Utils.yargs.locale() || 'en-US'
-  lang = lang.replace('_', '-')
-
-  const lang_map = {
-    pt: 'pt-PT',
-    br: 'pt-BR',
-    en: 'en-US',
-    cn: 'zh-CN',
-    tw: 'zh-TW',
-  }
-
-  lang = lang_map[lang] ? lang_map[lang] : lang
-
-
+  let lang = opts.lang
 
   if (lang === 'zh-CN') {
     const cnOperatorMappings = {
@@ -232,6 +270,10 @@ const getUrl = async (keyword, opts: any = {}, Utils) => {
   return url
 }
 
+/**
+ * Get html by sending get request
+ * @param url 
+ */
 const getHtml = async (url) => {
   try {
     const response = await got.get(url)
@@ -244,38 +286,53 @@ const getHtml = async (url) => {
   }
 }
 
-
+/**
+ * Implement Semo hooks
+ */
 export = (Utils) => {
   return {
     hook_repl_command: new Utils.Hook('semo', () => {
       return {
         doc: {
           help: 'Get Javascript docs by keyword.',
-          async action(keyword) {
-            if (!keyword) {
+          async action(input) {
+            if (!input) {
               Utils.warn('keyword is required')
             } else {
-              // TODO: Add cache for repeat query
-              
               // @ts-ignore
               this.clearBufferedCommand();
               console.log() // add blank line
 
-              let parseKeyworld = Utils.yParser(keyword)
-              keyword = parseKeyworld._.join(' ')
-              keyword = keyword.replace(/\(.*?\)/, '').toLowerCase().trim()
+              
+              let { keyword, opts } = getKeywordAndOpts(input, Utils)
+              const cacheKey = keyword + ':' + Utils.md5(JSON.stringify(opts))
+              const cache = Utils.getCache('repl-cache')
+              
+              let cached = cache.get(cacheKey)
+              if (!opts.force && cached) {
+                console.log(marked(cached))
+                Utils.debug('semo-plugin-repl-doc')('Cache hits')
+                // @ts-ignore
+                this.displayPrompt();
+                return
+              }
 
-              if (parseKeyworld.help || parseKeyworld.h || keyword === 'help') {
-                Utils.info('.doc help: This help')
-                Utils.info('.doc string.trim: Get info about Javascript object and method')
-                Utils.info('.doc string.trim --lang=en_US: Set prefered language code')
-                Utils.info('.doc string.trim --type=global_object: Set keyword type')
 
+              if (opts.help) {
+
+                Utils.info('Examples:')
+                Utils.info('.doc string.trim')
+                Utils.info('.doc string.trim --lang=en_US')
+                Utils.info('.doc string.trim --type=global_object')
+                Utils.info('.doc string.trim --force')
+                
                 console.log()
                 Utils.info('Supported type: statement, category, function, operator, global_object, search.')
-                Utils.info('Supported lang: standard language code, e.g. en_US, zh_CN...')
+                Utils.info('Supported lang: standard language codes, e.g. en_US, zh_CN...')
                 Utils.info('If --lang exist but no translation, it will fallover to en_US.')
                 Utils.info('If --type exist, it will get info from that type, if not, it will try to guess your purpose.')
+                Utils.info('If --force exist, it will ignore cache in memory.')
+                Utils.info('For get this help, you can use --help, -h, or just input .doc help.')
                 console.log()
 
                 // @ts-ignore
@@ -283,15 +340,11 @@ export = (Utils) => {
                 return 
               }
 
-              const url = await getUrl(keyword, parseKeyworld, Utils)
+              const url = await getUrl(keyword, opts, Utils)
               const html = await getHtml(url)
               if (html) {
                 let parsed = await parseHtml(html)
-
-                marked.setOptions({
-                  renderer: new TerminalRenderer()
-                })
-
+                cache.set(cacheKey, parsed, 3600)
                 console.log(marked(parsed))
               }
             }
