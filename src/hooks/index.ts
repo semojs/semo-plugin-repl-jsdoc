@@ -115,26 +115,26 @@ const getUrl = async (keyword, opts: any = {}, Utils) => {
 
     if (matched.length > 0) {
       opts.type = 'operator'
-    }
 
-    if (matched.length > 1) {
-      const answers: any = await Utils.inquirer.prompt([
-        {
-          type: 'list',
-          name: 'selected',
-          message: `Please choose a matched keyword:`,
-          choices: matched.map((key) => {
-            return {
-              key: cnOperatorMappings[key],
-              value: key
-            }
-          })
-        }
-      ])
-
-      keyword = cnOperatorMappings[answers.selected]
-    } else {
-      keyword = cnOperatorMappings[matched[0]]
+      if (matched.length > 1) {
+        const answers: any = await Utils.inquirer.prompt([
+          {
+            type: 'list',
+            name: 'selected',
+            message: `Please choose a matched keyword:`,
+            choices: matched.map((key) => {
+              return {
+                key: cnOperatorMappings[key],
+                value: key
+              }
+            })
+          }
+        ])
+  
+        keyword = cnOperatorMappings[answers.selected]
+      } else {
+        keyword = cnOperatorMappings[matched[0]]
+      }
     }
   }
 
