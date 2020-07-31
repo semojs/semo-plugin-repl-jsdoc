@@ -289,6 +289,7 @@ const getHtml = async (url) => {
 /**
  * Implement Semo hooks
  */
+// @ts-ignore
 export = (Utils) => {
   return {
     hook_repl_command: new Utils.Hook('semo', () => {

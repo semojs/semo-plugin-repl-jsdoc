@@ -24,6 +24,6 @@ semo r
 
 Mostly this plugin is built on parsing the structure of MDN, so it's very likely i missed something or MDN changed later, if it has issues, please let me know.
 
-## License
+## Licence
 
 MIT
