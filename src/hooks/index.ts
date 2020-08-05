@@ -215,7 +215,7 @@ const getUrl = async (keyword, opts: any = {}, Utils) => {
   const global_objects = [
     'infinity', 'nan', 'undefined', 'globalthis',
     'eval', 'isfinite', 'isnan', 'parsefloat', 'parseint', 'decodeuri', 'decodeuricomponent', 'encodeuri', 'encodeuricomponent',
-    'obbject', 'function', 'boolean', 'symbol',
+    'object', 'function', 'boolean', 'symbol',
     'error', 'aggregateerror', 'evalerror', 'internalerror', 'rangeerror', 'referenceerror', 'syntaxerror', 'typeerror', 'urierror', 
     'number', 'bigint', 'math', 'date', 
     'string', 'regexp',
