@@ -311,7 +311,10 @@ export = (Utils) => {
               
               let cached = cache.get(cacheKey)
               if (!opts.force && cached) {
-                console.log(marked(cached))
+                Utils.consoleReader(marked(cached), {
+                  plugin: 'semo-plugin-repl-doc',
+                  identifier: input
+                })
                 Utils.debug('semo-plugin-repl-doc')('Cache hits')
                 // @ts-ignore
                 this.displayPrompt();
@@ -347,7 +350,10 @@ export = (Utils) => {
               if (html) {
                 let parsed = await parseHtml(html)
                 cache.set(cacheKey, parsed, 3600)
-                console.log(marked(parsed))
+                Utils.consoleReader(marked(parsed), {
+                  plugin: 'semo-plugin-repl-doc',
+                  identifier: input
+                })
               }
             }
             
