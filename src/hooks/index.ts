@@ -294,7 +294,7 @@ export = (Utils) => {
   return {
     hook_repl_command: new Utils.Hook('semo', () => {
       return {
-        doc: {
+        jsdoc: {
           help: 'Get Javascript docs by keyword.',
           async action(input) {
             if (!input) {
