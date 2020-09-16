@@ -19,7 +19,7 @@ const getKeywordAndOpts = (input, Utils) => {
   let keyword = parseKeyworld._.join(' ')
   keyword = keyword.replace(/\(.*?\)/, '').toLowerCase().trim()
 
-  let lang = parseKeyworld.lang || Utils.config('$plugin.repl-doc.lang') || Utils.yargs.locale() || 'en-US'
+  let lang = parseKeyworld.lang || Utils.config('$plugin.repl-jsdoc.lang') || Utils.yargs.locale() || 'en-US'
   lang = lang.replace('_', '-')
 
   const lang_map = {
@@ -266,7 +266,7 @@ const getUrl = async (keyword, opts: any = {}, Utils) => {
     }
   }
 
-  Utils.debug('semo-plugin-repl-doc')(url)
+  Utils.debug('semo-plugin-repl-jsdoc')(url)
   return url
 }
 
@@ -312,10 +312,10 @@ export = (Utils) => {
               let cached = cache.get(cacheKey)
               if (!opts.force && cached) {
                 Utils.consoleReader(marked(cached), {
-                  plugin: 'semo-plugin-repl-doc',
+                  plugin: 'semo-plugin-repl-jsdoc',
                   identifier: input
                 })
-                Utils.debug('semo-plugin-repl-doc')('Cache hits')
+                Utils.debug('semo-plugin-repl-jsdoc')('Cache hits')
                 // @ts-ignore
                 this.displayPrompt();
                 return
@@ -351,7 +351,7 @@ export = (Utils) => {
                 let parsed = await parseHtml(html)
                 cache.set(cacheKey, parsed, 3600)
                 Utils.consoleReader(marked(parsed), {
-                  plugin: 'semo-plugin-repl-doc',
+                  plugin: 'semo-plugin-repl-jsdoc',
                   identifier: input
                 })
               }
