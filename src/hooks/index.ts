@@ -274,12 +274,33 @@ const getUrl = async (keyword, opts: any = {}, Utils) => {
  * Get html by sending get request
  * @param url 
  */
-const getHtml = async (url) => {
+const getHtml = async (url: string) => {
   try {
     const response = await got.get(url)
-    let html = response.body
+    let html:string = response.body
 
-    return html
+    if (url.indexOf('/search?') === -1) {
+      return html
+    } else {
+      const pattern = new RegExp('<a[^>]*?>.*?</a>', 'gi')
+      let matches: RegExpExecArray | null
+      let mdLinks = {}
+      while ((matches = pattern.exec(html)) !== null) {
+        if (matches[0].indexOf('result-title') > -1) {
+          let link = matches[0].match(/href="(.*?)"/)
+          let title = matches[0].match(/<a[^>]*?>(.*?)<\/a/)
+          if (link && title) {
+            let pureLink = 'https://developer.mozilla.org' + link[1]
+            let pureTitle = title[1]
+            mdLinks[pureLink] = he.decode(pureTitle)
+          }
+        }
+      }
+      
+      process.exit(0)
+      return html
+    }
+
   } catch (e) {
     console.log(e.message)
     return null
