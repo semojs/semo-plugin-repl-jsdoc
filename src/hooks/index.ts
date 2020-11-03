@@ -5,6 +5,7 @@ import TurndownService from 'turndown'
 import { tables } from 'turndown-plugin-gfm'
 import marked from 'marked'
 import TerminalRenderer from 'marked-terminal'
+import enquirer from 'enquirer'
 marked.setOptions({
   renderer: new TerminalRenderer()
 })
@@ -274,7 +275,7 @@ const getUrl = async (keyword, opts: any = {}, Utils) => {
  * Get html by sending get request
  * @param url 
  */
-const getHtml = async (url: string) => {
+const getHtml = async (url: string, Utils) => {
   try {
     const response = await got.get(url)
     let html:string = response.body
@@ -284,7 +285,7 @@ const getHtml = async (url: string) => {
     } else {
       const pattern = new RegExp('<a[^>]*?>.*?</a>', 'gi')
       let matches: RegExpExecArray | null
-      let mdLinks = {}
+      let mdLinks:object[] = []
       while ((matches = pattern.exec(html)) !== null) {
         if (matches[0].indexOf('result-title') > -1) {
           let link = matches[0].match(/href="(.*?)"/)
@@ -292,12 +293,28 @@ const getHtml = async (url: string) => {
           if (link && title) {
             let pureLink = 'https://developer.mozilla.org' + link[1]
             let pureTitle = title[1]
-            mdLinks[pureLink] = he.decode(pureTitle)
+            mdLinks.push({
+              name: he.decode(pureTitle),
+              value: pureLink
+            })
           }
         }
       }
-      
-      process.exit(0)
+
+      const choose = await Utils.inquirer.prompt([
+        {
+          type: 'list',
+          name: 'url',
+          message: 'In search mode, please select a topic to view.',
+          choices: mdLinks
+        }
+      ])
+
+      if (choose.url) {
+        const response = await got.get(choose.url)
+        html = response.body
+      }
+
       return html
     }
 
@@ -367,7 +384,7 @@ export = (Utils) => {
               }
 
               const url = await getUrl(keyword, opts, Utils)
-              const html = await getHtml(url)
+              const html = await getHtml(url, Utils)
               if (html) {
                 let parsed = await parseHtml(html)
                 cache.set(cacheKey, parsed, 3600)
