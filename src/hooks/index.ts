@@ -5,7 +5,7 @@ import TurndownService from 'turndown'
 import { tables } from 'turndown-plugin-gfm'
 import marked from 'marked'
 import TerminalRenderer from 'marked-terminal'
-import enquirer from 'enquirer'
+
 marked.setOptions({
   renderer: new TerminalRenderer()
 })
@@ -301,25 +301,41 @@ const getHtml = async (url: string, Utils) => {
         }
       }
 
-      const choose = await Utils.inquirer.prompt([
-        {
-          type: 'list',
-          name: 'url',
-          message: 'In search mode, please select a topic to view.',
-          choices: mdLinks
-        }
-      ])
+      try {
+        const response = await prompts({
+          type: 'number',
+          name: 'value',
+          message: 'How old are you?',
+          validate: value => value < 18 ? `Nightclub is 18+ only` : true,
+          stdout: process.stdout,
+          stdin: process.stdin
+        });
+       
+        console.log(response); // => { value: 24 }
 
-      if (choose.url) {
-        const response = await got.get(choose.url)
-        html = response.body
+      } catch (e) {
+
       }
+
+      // const choose = await Utils.inquirer.prompt([
+      //   {
+      //     type: 'list',
+      //     name: 'url',
+      //     message: 'In search mode, please select a topic to view.',
+      //     choices: mdLinks
+      //   }
+      // ])
+
+      // if (choose.url) {
+      //   const response = await got.get(choose.url)
+      //   html = response.body
+      // }
 
       return html
     }
 
   } catch (e) {
-    console.log(e.message)
+    console.log(e)
     return null
   }
 }
@@ -388,15 +404,17 @@ export = (Utils) => {
               if (html) {
                 let parsed = await parseHtml(html)
                 cache.set(cacheKey, parsed, 3600)
-                Utils.consoleReader(marked(parsed), {
-                  plugin: 'semo-plugin-repl-jsdoc',
-                  identifier: input
-                })
+                console.log(parsed)
+                // exit()
+                // Utils.consoleReader(marked(parsed), {
+                //   plugin: 'semo-plugin-repl-jsdoc',
+                //   identifier: input
+                // })
               }
             }
             
             // @ts-ignore
-            this.displayPrompt();
+            // this.displayPrompt();
           }
         }
       }
