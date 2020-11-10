@@ -301,35 +301,19 @@ const getHtml = async (url: string, Utils) => {
         }
       }
 
-      try {
-        const response = await prompts({
-          type: 'number',
-          name: 'value',
-          message: 'How old are you?',
-          validate: value => value < 18 ? `Nightclub is 18+ only` : true,
-          stdout: process.stdout,
-          stdin: process.stdin
-        });
-       
-        console.log(response); // => { value: 24 }
+      const choose = await Utils.inquirer.prompt([
+        {
+          type: 'list',
+          name: 'url',
+          message: 'In search mode, please select a topic to view.',
+          choices: mdLinks
+        }
+      ])
 
-      } catch (e) {
-
+      if (choose.url) {
+        const response = await got.get(choose.url)
+        html = response.body
       }
-
-      // const choose = await Utils.inquirer.prompt([
-      //   {
-      //     type: 'list',
-      //     name: 'url',
-      //     message: 'In search mode, please select a topic to view.',
-      //     choices: mdLinks
-      //   }
-      // ])
-
-      // if (choose.url) {
-      //   const response = await got.get(choose.url)
-      //   html = response.body
-      // }
 
       return html
     }
@@ -404,17 +388,15 @@ export = (Utils) => {
               if (html) {
                 let parsed = await parseHtml(html)
                 cache.set(cacheKey, parsed, 3600)
-                console.log(parsed)
-                // exit()
-                // Utils.consoleReader(marked(parsed), {
-                //   plugin: 'semo-plugin-repl-jsdoc',
-                //   identifier: input
-                // })
+                Utils.consoleReader(marked(parsed), {
+                  plugin: 'semo-plugin-repl-jsdoc',
+                  identifier: input
+                })
               }
             }
             
             // @ts-ignore
-            // this.displayPrompt();
+            this.displayPrompt();
           }
         }
       }
